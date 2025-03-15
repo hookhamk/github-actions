@@ -1,0 +1,26 @@
+# Name of workflow
+name: Cypress Tests on PR to Develop
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  cypress_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Cypress Component Tests
+        run: npx cypress run --component
+          mv cypress/report/mochawesome.json cypress-results.json || true
