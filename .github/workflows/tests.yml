@@ -1,0 +1,55 @@
+# Name of workflow
+name: Cypress Tests on PR to Develop
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  cypress_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Cypress Component Tests
+        run: npx cypress run --component --reporter json > cypress-results.json || true
+
+      - name: Extract Cypress Metrics
+        run: |
+          PASSED=$(jq '[.results[].suites[].tests[] | select(.state == "passed")] | length' cypress-results.json)
+          FAILED=$(jq '[.results[].suites[].tests[] | select(.state == "failed")] | length' cypress-results.json)
+          SKIPPED=$(jq '[.results[].suites[].tests[] | select(.state == "pending")] | length' cypress-results.json)
+
+          echo "CYPRESS_PASSED=$PASSED" >> $GITHUB_ENV
+          echo "CYPRESS_FAILED=$FAILED" >> $GITHUB_ENV
+          echo "CYPRESS_SKIPPED=$SKIPPED" >> $GITHUB_ENV
+
+      - name: Output Test Results
+        run: |
+          echo "✅ Passed: $CYPRESS_PASSED"
+          echo "❌ Failed: $CYPRESS_FAILED"
+          echo "⚠️ Skipped: $CYPRESS_SKIPPED"
+
+      - name: Save Test Summary to GitHub
+        run: |
+          echo "## Cypress Component Test Report" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Passed: $CYPRESS_PASSED" >> $GITHUB_STEP_SUMMARY
+          echo "- ❌ Failed: $CYPRESS_FAILED" >> $GITHUB_STEP_SUMMARY
+          echo "- ⚠️ Skipped: $CYPRESS_SKIPPED" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload Cypress Test Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-results
+          path: cypress-results.json
