@@ -22,17 +22,18 @@ jobs:
         run: npm install
 
       - name: Run Cypress Component Tests
-        run: npx cypress run --component --reporter json > cypress-results.json || true
+        run: npx cypress run --component
+          mv cypress/report/mochawesome.json cypress-results.json || true
 
-      # - name: Extract Cypress Metrics
-      #   run: |
-      #     PASSED=$(jq '[.results[].suites[].tests[] | select(.state == "passed")] | length' cypress-results.json)
-      #     FAILED=$(jq '[.results[].suites[].tests[] | select(.state == "failed")] | length' cypress-results.json)
-      #     SKIPPED=$(jq '[.results[].suites[].tests[] | select(.state == "pending")] | length' cypress-results.json)
+      - name: Extract Cypress Metrics
+        run: |
+          PASSED=$(jq '[.results[].suites[].tests[] | select(.state == "passed")] | length' cypress-results.json)
+          FAILED=$(jq '[.results[].suites[].tests[] | select(.state == "failed")] | length' cypress-results.json)
+          SKIPPED=$(jq '[.results[].suites[].tests[] | select(.state == "pending")] | length' cypress-results.json)
 
-      #     echo "CYPRESS_PASSED=$PASSED" >> $GITHUB_ENV
-      #     echo "CYPRESS_FAILED=$FAILED" >> $GITHUB_ENV
-      #     echo "CYPRESS_SKIPPED=$SKIPPED" >> $GITHUB_ENV
+          echo "CYPRESS_PASSED=$PASSED" >> $GITHUB_ENV
+          echo "CYPRESS_FAILED=$FAILED" >> $GITHUB_ENV
+          echo "CYPRESS_SKIPPED=$SKIPPED" >> $GITHUB_ENV
 
       - name: Output Test Results
         run: |
